@@ -1,2 +1,2 @@
 # rusen
-nes emulator
+NES Emulator written in Rust
