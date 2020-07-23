@@ -22,18 +22,12 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime: [async-std, tokio]
     steps:
       - uses: actions/checkout@v2
       - name: Cargo check
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: |
-            --no-default-features
-            --features runtime-${{ matrix.runtime }}
 
   lint:
     name: Lint
