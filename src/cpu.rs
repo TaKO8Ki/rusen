@@ -1,5 +1,7 @@
-const program_rom_page_size: u16 = 16 * 1024;
-const character_rom_page_size: u16 = 8 * 1024;
+use crate::variable::INSTRUCTIONS;
+
+const prg_rom_page_size: u16 = 16 * 1024;
+const chr_rom_page_size: u16 = 8 * 1024;
 
 pub struct Cpu {
     pub register: Register,
@@ -51,18 +53,17 @@ impl Cpu {
         let prg_addr = 0x0010;
         let prg_page = rom[4];
 
-        let chr_addr = prg_addr + prg_page * program_rom_page_size;
+        let chr_addr = prg_addr + prg_page * prg_rom_page_size;
         let chr_page = rom[5];
 
         let prg_bytes = rom
-            .get(prg_addr as usize..(prg_addr + prg_page * program_rom_page_size) as usize)
+            .get(prg_addr as usize..(prg_addr + prg_page * prg_rom_page_size) as usize)
             .unwrap();
         let chr_bytes =
-            rom.get(chr_addr as usize..(chr_addr + chr_page * character_rom_page_size) as usize);
+            rom.get(chr_addr as usize..(chr_addr + chr_page * chr_rom_page_size) as usize);
 
         for byte in prg_bytes {
             self.ram[(0x8000 + byte) as usize] = prg_bytes[*byte as usize];
-
             if prg_page == 1 {
                 self.ram[(0x8000 + byte + 0x4000) as usize] = prg_bytes[*byte as usize]
             }
@@ -71,11 +72,21 @@ impl Cpu {
 
     fn read(addr: String) {}
 
-    fn fetch(self, index: u16) {
-        let code = self.ram[(self.register.pc + index) as usize];
+    fn fetch(&self, index: u16) -> u16 {
+        self.ram[(self.register.pc + index) as usize]
     }
 
     fn reset() {}
 
-    fn exec() {}
+    fn exec(&self) {
+        let pre_pc = self.register.pc;
+        let opecode = self.fetch(0) as usize;
+        let (instruction, addressing) = (INSTRUCTIONS[opecode][0], INSTRUCTIONS[opecode][1]);
+
+        let addr: u16;
+
+        match addressing {
+            "impl" => addr = self.hoge(),
+        }
+    }
 }
