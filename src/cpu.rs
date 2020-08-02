@@ -1,3 +1,4 @@
+use crate::addressing;
 use crate::variable::INSTRUCTIONS;
 
 const prg_rom_page_size: u16 = 16 * 1024;
@@ -9,12 +10,12 @@ pub struct Cpu {
 }
 
 pub struct Register {
-    pub a: String,
-    pub x: String,
-    pub y: String,
+    pub a: u16,
+    pub x: u16,
+    pub y: u16,
     pub s: u16,
     pub p: u16,
-    pub sp: String,
+    pub sp: u16,
     pub pc: u16,
 }
 
@@ -30,12 +31,12 @@ impl Default for Cpu {
 impl Default for Register {
     fn default() -> Self {
         Register {
-            a: "fhoweahfo".to_string(),
-            x: "fhoweahfo".to_string(),
-            y: "fhoweahfo".to_string(),
+            a: 0x999,
+            x: 0x999,
+            y: 0x999,
             s: 0x999,
             p: 0x999,
-            sp: "fhoweahfo".to_string(),
+            sp: 0x999,
             pc: 0x999,
         }
     }
@@ -72,21 +73,29 @@ impl Cpu {
 
     fn read(addr: String) {}
 
-    fn fetch(&self, index: u16) -> u16 {
+    pub fn fetch(&self, index: u16) -> u16 {
         self.ram[(self.register.pc + index) as usize]
     }
 
     fn reset() {}
 
-    fn exec(&self) {
+    fn exec(&mut self) {
         let pre_pc = self.register.pc;
         let opecode = self.fetch(0) as usize;
         let (instruction, addressing) = (INSTRUCTIONS[opecode][0], INSTRUCTIONS[opecode][1]);
 
-        let addr: u16;
-
-        match addressing {
-            "impl" => addr = self.hoge(),
-        }
+        let addr = match addressing {
+            "impl" => self.implied(),
+            "A" => self.accumulator(),
+            "#" => self.immediate(),
+            "zpg" => self.zero_page(),
+            "zpg.X" => self.zero_page_x(),
+            "zpg.Y" => self.zero_page_y(),
+            "abs" => self.absolute(),
+            "abs.X" => self.absolute_x(),
+            "abs.Y" => self.absolute_y(),
+            "rel" => self.relative(),
+            _ => None,
+        };
     }
 }
