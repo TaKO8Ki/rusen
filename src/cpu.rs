@@ -46,8 +46,8 @@ impl Cpu {
     pub fn new(&mut self) {
         self.register.s = 0xfd;
         self.register.p = 0x34;
-        let lower = self.fetch_memory8(0xfffc);
-        let upper = self.fetch_memory8(0xfffd);
+        let lower = self.fetch_memory(0xfffc);
+        let upper = self.fetch_memory(0xfffd);
     }
 
     fn load(&mut self, rom: Vec<u16>) {
@@ -73,7 +73,7 @@ impl Cpu {
 
     fn read(addr: String) {}
 
-    pub fn fetch(&self, index: u16) -> u16 {
+    pub fn fetch_code(&self, index: u16) -> u16 {
         self.ram[(self.register.pc + index) as usize]
     }
 
@@ -81,7 +81,7 @@ impl Cpu {
 
     fn exec(&mut self) {
         let pre_pc = self.register.pc;
-        let opecode = self.fetch(0) as usize;
+        let opecode = self.fetch_code(0) as usize;
         let (instruction, addressing) = (INSTRUCTIONS[opecode][0], INSTRUCTIONS[opecode][1]);
 
         let addr = match addressing {
@@ -89,12 +89,14 @@ impl Cpu {
             "A" => self.accumulator(),
             "#" => self.immediate(),
             "zpg" => self.zero_page(),
-            "zpg.X" => self.zero_page_x(),
-            "zpg.Y" => self.zero_page_y(),
+            "zpg,X" => self.zero_page_x(),
+            "zpg,Y" => self.zero_page_y(),
             "abs" => self.absolute(),
-            "abs.X" => self.absolute_x(),
-            "abs.Y" => self.absolute_y(),
+            "abs,X" => self.absolute_x(),
+            "abs,Y" => self.absolute_y(),
             "rel" => self.relative(),
+            "X,ind" => self.indexed_indirect(),
+            "Ind,Y" => self.indirect_indexed(),
             _ => None,
         };
     }
