@@ -1,3 +1,12 @@
+use rusen::cpu::Cpu;
+use std::fs::{self, File};
+use std::io::Read;
+use std::io::{self, prelude::*};
+
 fn main() {
-    println!("Hello, world!");
+    let mut f = File::open("sample1.nes").expect("no file found");
+    let mut buffer = Vec::new();
+    f.read_to_end(&mut buffer).expect("buffer overflow");
+    println!("{:?}", buffer);
+    let cpu = Cpu::default();
 }
