@@ -103,4 +103,12 @@ impl Cpu {
         self.register.pc += 2;
         Some(addr)
     }
+
+    pub fn absolute_indirect(&mut self) -> Option<u16> {
+        let addr = self.absolute()?;
+        let lower = self.fetch_memory(addr);
+        let upper = self.fetch_memory(addr) + 1;
+        let addr = upper << 8 | lower;
+        Some(addr)
+    }
 }

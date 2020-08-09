@@ -97,6 +97,7 @@ impl Cpu {
             "rel" => self.relative(),
             "X,ind" => self.indexed_indirect(),
             "Ind,Y" => self.indirect_indexed(),
+            "Ind" => self.absolute_indirect(),
             _ => None,
         };
     }
