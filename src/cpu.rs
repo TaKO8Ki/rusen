@@ -13,7 +13,9 @@ pub struct Register {
     pub x: u16,
     pub y: u16,
     pub s: u16,
-    pub p: u16, // status register
+    // status register
+    // 0: C, 1: Z, 2: I, 3: D, 4: B, 5: R, 6: V, 7: N
+    pub p: u16,
     pub sp: u16,
     pub pc: u16,
 }

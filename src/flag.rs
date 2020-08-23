@@ -28,16 +28,24 @@ impl Cpu {
     pub fn flag_c(&mut self, instruction: String, b: u16) {
         if (b >> 8) != 0 {
             if instruction == "ADC" {
-                self.register.p = self.register.p | 0x01
+                self.set_c_flag()
             } else {
-                self.register.p = self.register.p & 0xfe
+                self.clear_c_flag()
             }
         } else {
             if instruction == "ADC" {
-                self.register.p = self.register.p & 0xfe
+                self.clear_c_flag()
             } else {
-                self.register.p = self.register.p | 0x01
+                self.set_c_flag()
             }
         }
+    }
+
+    pub fn set_c_flag(&mut self) {
+        self.register.p = self.register.p | 0x01
+    }
+
+    pub fn clear_c_flag(&mut self) {
+        self.register.p = self.register.p & 0xfe
     }
 }
