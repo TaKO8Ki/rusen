@@ -232,7 +232,6 @@ impl Cpu {
 
     pub fn bit(&mut self, addr: u16) {
         let value = self.fetch_memory(addr);
-
         self.flag_z(value & self.register.a);
         self.flag_n(value);
         if (value & 0x40) != 0 {
@@ -241,4 +240,28 @@ impl Cpu {
             self.register.p = self.register.p & 0xbf
         }
     }
+
+    pub fn jmp(&mut self, addr: u16) {
+        self.register.pc = addr
+    }
+
+    pub fn jsr(&mut self, addr: u16) {
+        let upper = (self.register.pc - 1) >> 8;
+        let lower = self.register.pc - 1;
+        self.set_memory(0x100 + self.register.s, upper);
+        self.set_memory(0x100 + self.register.s - 1, lower);
+        self.register.s -= 2;
+        self.register.pc = addr;
+    }
+
+    pub fn rts(&mut self) {
+        let lower = self.fetch_memory(0x100 + self.register.s + 1);
+        self.register.s += 1;
+        let upper = self.fetch_memory(0x100 + self.register.s + 1);
+        self.register.s += 1;
+        self.register.pc = (upper << 8) | lower;
+        self.register.pc += 1;
+    }
+
+    pub fn brk(&mut self) {}
 }
