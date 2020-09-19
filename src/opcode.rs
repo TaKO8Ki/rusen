@@ -263,5 +263,24 @@ impl Cpu {
         self.register.pc += 1;
     }
 
-    pub fn brk(&mut self) {}
+    pub fn brk(&mut self) {
+        let iflag = self.register.p & 0x04;
+        if iflag == 0 {
+            self.register.p = self.register.p | 0x10;
+            self.register.pc += 1;
+
+            let upper0 = (self.register.pc) >> 8;
+            let lower0 = self.register.pc;
+            self.set_memory(0x100 + self.register.s, upper0);
+            self.set_memory(0x100 + self.register.s - 1, lower0);
+            self.set_memory(0x100 + self.register.s - 2, self.register.p);
+            self.register.s -= 3;
+
+            self.register.p = self.register.p | 0x04;
+
+            let upper1 = self.fetch_memory(0xffff);
+            let lower1 = self.fetch_memory(0xfffe);
+            self.register.pc = (upper1 << 8) | lower1
+        }
+    }
 }
