@@ -8,5 +8,10 @@ fn main() {
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer).expect("buffer overflow");
     println!("{:?}", buffer);
-    let cpu = Cpu::default();
+    let mut cpu = Cpu::default();
+
+    for i in 0..150 {
+        println!("================ {} ================", i);
+        cpu.exec();
+    }
 }
