@@ -1,23 +1,23 @@
 use crate::addressing::AddressingMode;
 use crate::instruction::Instruction;
 
-const prg_rom_page_size: u16 = 16 * 1024;
-const chr_rom_page_size: u16 = 8 * 1024;
+const prg_rom_page_size: u16 = 0x4000;
+const chr_rom_page_size: u16 = 0x2000;
 
 pub struct Cpu {
     pub register: Register,
-    pub ram: [u16; 0x10000],
+    pub ram: [u8; 0x10000],
 }
 
 #[derive(Debug)]
 pub struct Register {
-    pub a: u16,
-    pub x: u16,
-    pub y: u16,
-    pub s: u16,
+    pub a: u8,
+    pub x: u8,
+    pub y: u8,
+    pub s: u8,
     // status register
     // 0: C, 1: Z, 2: I, 3: D, 4: B, 5: R, 6: V, 7: N
-    pub p: u16,
+    pub p: u8,
     pub sp: u16,
     pub pc: u16,
 }
@@ -49,40 +49,38 @@ impl Cpu {
     pub fn new(&mut self) {
         self.register.s = 0xfd;
         self.register.p = 0x34;
-        let lower = self.fetch_memory(0xfffc);
-        let upper = self.fetch_memory(0xfffd);
+        let lower = self.fetch_memory8(0xfffc);
+        let upper = self.fetch_memory8(0xfffd);
     }
 
-    fn load(&mut self, rom: Vec<u16>) {
+    pub fn load(&mut self, rom: Vec<u8>) {
         let prg_addr = 0x0010;
         let prg_page = rom[4];
 
-        let chr_addr = prg_addr + prg_page * prg_rom_page_size;
+        let chr_addr = prg_addr + prg_page as u16 * prg_rom_page_size;
         let chr_page = rom[5];
 
         let prg_bytes = rom
-            .get(prg_addr as usize..(prg_addr + prg_page * prg_rom_page_size) as usize)
+            .get(prg_addr as usize..(prg_addr + prg_page as u16 * prg_rom_page_size) as usize)
             .unwrap();
         let chr_bytes =
-            rom.get(chr_addr as usize..(chr_addr + chr_page * chr_rom_page_size) as usize);
+            rom.get(chr_addr as usize..(chr_addr + chr_page as u16 * chr_rom_page_size) as usize);
 
         for byte in prg_bytes {
-            self.ram[(0x8000 + byte) as usize] = prg_bytes[*byte as usize];
+            self.ram[(0x8000 + *byte as u16) as usize] = prg_bytes[*byte as usize];
             if prg_page == 1 {
-                self.ram[(0x8000 + byte + 0x4000) as usize] = prg_bytes[*byte as usize]
+                self.ram[(0x8000 + *byte as u16 + 0x4000) as usize] = prg_bytes[*byte as usize]
             }
         }
     }
 
-    fn read(addr: String) {}
-
-    pub fn fetch_code8(&self, index: u16) -> u16 {
-        self.ram[(self.register.pc + index) as usize]
+    pub fn fetch_code8(&self, index: u8) -> u8 {
+        self.ram[(self.register.pc as u8 + index) as usize]
     }
 
     fn reset() {}
 
-    pub fn instructions(&self, opecode: u16) -> (Instruction, AddressingMode) {
+    pub fn instructions(&self, opecode: u8) -> (Instruction, AddressingMode) {
         match opecode {
             0x69 => (Instruction::ADC, AddressingMode::Immediate),
             0x65 => (Instruction::ADC, AddressingMode::ZeroPage),
@@ -227,10 +225,15 @@ impl Cpu {
         }
     }
 
-    pub fn exec(&mut self) {
+    pub fn step(&mut self) {
         let pre_pc = self.register.pc;
         let opecode = self.fetch_code8(0);
         let (instruction, addressing) = self.instructions(opecode);
+
+        println!(
+            "[fetched opecode] opecode: {:?}, addressing: {:?}",
+            instruction, addressing
+        );
 
         let addr = match addressing {
             AddressingMode::Implied => self.implied(),
@@ -246,66 +249,66 @@ impl Cpu {
             AddressingMode::IndirectX => self.indexed_indirect(),
             AddressingMode::IndirectY => self.indirect_indexed(),
             AddressingMode::Indirect => self.absolute_indirect(),
-            _ => None,
         };
 
         match instruction {
-            Instruction::ADC => self.adc(addr.unwrap()),
-            Instruction::SBC => self.sbc(addr.unwrap()),
-            Instruction::AND => self.and(addr.unwrap()),
-            Instruction::ORA => self.ora(addr.unwrap()),
-            Instruction::EOR => (),
-            Instruction::ASL => (),
-            Instruction::LSR => (),
-            Instruction::ROL => (),
-            Instruction::ROR => (),
-            Instruction::BCC => (),
-            Instruction::BCS => (),
-            Instruction::BEQ => (),
-            Instruction::BNE => (),
-            Instruction::BVC => (),
-            Instruction::BVS => (),
-            Instruction::BPL => (),
-            Instruction::BMI => (),
-            Instruction::BIT => (),
-            Instruction::JMP => (),
-            Instruction::JSR => (),
-            Instruction::RTS => (),
+            Instruction::ADC => self.adc(addr as u8),
+            Instruction::SBC => self.sbc(addr as u8),
+            Instruction::AND => self.and(addr as u8),
+            Instruction::ORA => self.ora(addr as u8),
+            Instruction::EOR => self.eor(addr as u8),
+            Instruction::ASL => self.asl(addr as u8),
+            Instruction::LSR => self.lsr(addr as u8),
+            Instruction::ROL => self.rol(addr as u8),
+            Instruction::ROR => self.ror(addr as u8),
+            Instruction::BCC => self.bcc(addr),
+            Instruction::BCS => self.bcs(addr),
+            Instruction::BEQ => self.beq(addr),
+            Instruction::BNE => self.bne(addr),
+            Instruction::BVC => self.bvc(addr),
+            Instruction::BVS => self.bvs(addr),
+            Instruction::BPL => self.bpl(addr),
+            Instruction::BMI => self.bmi(addr),
+            Instruction::BIT => self.bit(addr as u8),
+            Instruction::JMP => self.jmp(addr as u8),
+            Instruction::JSR => self.jsr(addr as u8),
+            Instruction::RTS => self.rts(),
             Instruction::BRK => self.brk(),
-            Instruction::RTI => (),
-            Instruction::CMP => (),
-            Instruction::CPX => (),
-            Instruction::CPY => (),
-            Instruction::INC => (),
-            Instruction::DEC => (),
-            Instruction::INX => (),
-            Instruction::DEX => (),
-            Instruction::INY => (),
-            Instruction::DEY => (),
-            Instruction::SEC => (),
-            Instruction::CLI => (),
-            Instruction::CLC => (),
-            Instruction::SEI => (),
-            Instruction::CLD => (),
-            Instruction::SED => (),
-            Instruction::CLV => (),
-            Instruction::LDA => (),
-            Instruction::LDX => (),
-            Instruction::LDY => (),
-            Instruction::STA => (),
-            Instruction::STX => (),
-            Instruction::STY => (),
-            Instruction::TAX => (),
-            Instruction::TAY => (),
-            Instruction::TXA => (),
-            Instruction::TYA => (),
-            Instruction::TSX => (),
-            Instruction::TXS => (),
-            Instruction::PHA => (),
-            Instruction::PLA => (),
-            Instruction::PHP => (),
-            Instruction::PLP => (),
-            Instruction::NOP => (),
+            // Instruction::RTI => self.rti(addr),
+            // Instruction::CMP => self.cmp(addr),
+            // Instruction::CPX => self.cpx(addr),
+            // Instruction::CPY => self.cpy(addr),
+            // Instruction::INC => self.inc(addr),
+            // Instruction::DEC => self.dec(addr),
+            // Instruction::INX => self.inx(addr),
+            // Instruction::DEX => self.dex(addr),
+            // Instruction::INY => self.iny(addr),
+            // Instruction::DEY => self.dey(addr),
+            // Instruction::SEC => self.sec(addr),
+            // Instruction::CLI => self.cli(addr),
+            // Instruction::CLC => self.clc(addr),
+            // Instruction::SEI => self.sei(addr),
+            // Instruction::CLD => self.cld(addr),
+            // Instruction::SED => self.sed(addr),
+            // Instruction::CLV => self.clv(addr),
+            // Instruction::LDA => self.lda(addr),
+            // Instruction::LDX => self.ldx(addr),
+            // Instruction::LDY => self.ldy(addr),
+            // Instruction::STA => self.sta(addr),
+            // Instruction::STX => self.stx(addr),
+            // Instruction::STY => self.sty(addr),
+            // Instruction::TAX => self.tax(addr),
+            // Instruction::TAY => self.tay(addr),
+            // Instruction::TXA => self.txa(addr),
+            // Instruction::TYA => self.tya(addr),
+            // Instruction::TSX => self.tsx(addr),
+            // Instruction::TXS => self.txs(addr),
+            // Instruction::PHA => self.pha(addr),
+            // Instruction::PLA => self.pla(addr),
+            // Instruction::PHP => self.php(addr),
+            // Instruction::PLP => self.plp(addr),
+            // Instruction::NOP => self.nop(addr),
+            _ => (),
         }
         println!("{:?}", self.register);
     }

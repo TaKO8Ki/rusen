@@ -1,7 +1,7 @@
 use crate::cpu::Cpu;
 
 impl Cpu {
-    pub fn flag_n(&mut self, b: u16) {
+    pub fn flag_n(&mut self, b: u8) {
         if b & 0x80 != 0 {
             self.register.p = self.register.p | 0x80
         } else {
@@ -9,7 +9,7 @@ impl Cpu {
         }
     }
 
-    pub fn flag_v(&mut self, b0: u16, b1: u16, b: u16) {
+    pub fn flag_v(&mut self, b0: u8, b1: u8, b: u8) {
         if ((b0 >> 7) ^ (b1 >> 7) != 0) && (b1 != b) {
             self.register.p = self.register.p | 0x40
         } else {
@@ -17,7 +17,7 @@ impl Cpu {
         }
     }
 
-    pub fn flag_z(&mut self, b: u16) {
+    pub fn flag_z(&mut self, b: u8) {
         if b == 0 {
             self.register.p = self.register.p | 0x02
         } else {
@@ -25,8 +25,8 @@ impl Cpu {
         }
     }
 
-    pub fn flag_c(&mut self, instruction: String, b: u16) {
-        if (b >> 8) != 0 {
+    pub fn flag_c(&mut self, instruction: String, b: u8) {
+        if (b as u16 >> 8) != 0 {
             if instruction == "ADC" {
                 self.set_c_flag()
             } else {

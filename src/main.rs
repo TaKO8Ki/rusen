@@ -7,11 +7,11 @@ fn main() {
     let mut f = File::open("sample1.nes").expect("no file found");
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer).expect("buffer overflow");
-    println!("{:?}", buffer);
     let mut cpu = Cpu::default();
+    cpu.load(buffer);
 
-    for i in 0..150 {
+    for i in 0..200 {
         println!("================ {} ================", i);
-        cpu.exec();
+        cpu.step();
     }
 }
