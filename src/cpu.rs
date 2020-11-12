@@ -1,15 +1,15 @@
 use crate::addressing::AddressingMode;
 use crate::instruction::Instruction;
 
-const prg_rom_page_size: u16 = 0x4000;
-const chr_rom_page_size: u16 = 0x2000;
+const PRG_ROM_PAGE_SIZE: u16 = 0x4000;
+const CHR_ROM_PAGE_SIZE: u16 = 0x2000;
 
 pub struct Cpu {
     pub register: Register,
     pub ram: [u8; 0x10000],
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Register {
     pub a: u8,
     pub x: u8,
@@ -39,49 +39,98 @@ impl Default for Register {
             y: 0,
             s: 0xfd,
             p: 0x34,
-            sp: 0,
+            sp: 0x01fd,
             pc: 0,
         }
     }
 }
 
 impl Cpu {
-    pub fn new(&mut self) {
+    pub fn initialize(&mut self) {
         self.register.s = 0xfd;
         self.register.p = 0x34;
         let lower = self.fetch_memory8(0xfffc);
         let upper = self.fetch_memory8(0xfffd);
+        self.register.pc = (upper as u16) << 8 | lower as u16;
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
         let prg_addr = 0x0010;
         let prg_page = rom[4];
 
-        let chr_addr = prg_addr + prg_page as u16 * prg_rom_page_size;
+        let chr_addr = prg_addr + prg_page as u16 * PRG_ROM_PAGE_SIZE;
         let chr_page = rom[5];
 
         let prg_bytes = rom
-            .get(prg_addr as usize..(prg_addr + prg_page as u16 * prg_rom_page_size) as usize)
+            .get(prg_addr as usize..(prg_addr + prg_page as u16 * PRG_ROM_PAGE_SIZE) as usize)
             .unwrap();
-        let chr_bytes =
-            rom.get(chr_addr as usize..(chr_addr + chr_page as u16 * chr_rom_page_size) as usize);
+        let _chr_bytes =
+            rom.get(chr_addr as usize..(chr_addr + chr_page as u16 * CHR_ROM_PAGE_SIZE) as usize);
 
-        for byte in prg_bytes {
-            self.ram[(0x8000 + *byte as u16) as usize] = prg_bytes[*byte as usize];
+        for (index, byte) in prg_bytes.iter().enumerate() {
+            self.ram[0x8000 + index] = *byte;
             if prg_page == 1 {
-                self.ram[(0x8000 + *byte as u16 + 0x4000) as usize] = prg_bytes[*byte as usize]
+                self.ram[(0x8000 + index + 0x4000) as usize] = *byte
             }
         }
     }
 
     pub fn fetch_code8(&self, index: u8) -> u8 {
-        self.ram[(self.register.pc as u8 + index) as usize]
+        self.ram[(self.register.pc + index as u16) as usize]
     }
 
-    fn reset() {}
+    pub fn instructions(&self, opcode: u8) -> (Instruction, AddressingMode) {
+        println!("[fetched opcode] {}", opcode);
+        match opcode {
+            0xa9 => (Instruction::LDA, AddressingMode::Immediate),
+            0xa5 => (Instruction::LDA, AddressingMode::ZeroPage),
+            0xb5 => (Instruction::LDA, AddressingMode::ZeroPageX),
+            0xad => (Instruction::LDA, AddressingMode::Absolute),
+            0xbd => (Instruction::LDA, AddressingMode::AbsoluteX),
+            0xb9 => (Instruction::LDA, AddressingMode::AbsoluteY),
+            0xa1 => (Instruction::LDA, AddressingMode::IndirectX),
+            0xb1 => (Instruction::LDA, AddressingMode::IndirectY),
 
-    pub fn instructions(&self, opecode: u8) -> (Instruction, AddressingMode) {
-        match opecode {
+            0xa2 => (Instruction::LDX, AddressingMode::Immediate),
+            0xa6 => (Instruction::LDX, AddressingMode::ZeroPage),
+            0xb6 => (Instruction::LDX, AddressingMode::ZeroPageY),
+            0xae => (Instruction::LDX, AddressingMode::Absolute),
+            0xbe => (Instruction::LDX, AddressingMode::AbsoluteY),
+
+            0xa0 => (Instruction::LDY, AddressingMode::Immediate),
+            0xa4 => (Instruction::LDY, AddressingMode::ZeroPage),
+            0xb4 => (Instruction::LDY, AddressingMode::ZeroPageX),
+            0xac => (Instruction::LDY, AddressingMode::Absolute),
+            0xbc => (Instruction::LDY, AddressingMode::AbsoluteX),
+
+            0x85 => (Instruction::STA, AddressingMode::ZeroPage),
+            0x95 => (Instruction::STA, AddressingMode::ZeroPageX),
+            0x8d => (Instruction::STA, AddressingMode::Absolute),
+            0x9d => (Instruction::STA, AddressingMode::AbsoluteX),
+            0x99 => (Instruction::STA, AddressingMode::AbsoluteY),
+            0x81 => (Instruction::STA, AddressingMode::IndirectX),
+            0x91 => (Instruction::STA, AddressingMode::IndirectY),
+
+            0x86 => (Instruction::STX, AddressingMode::ZeroPage),
+            0x96 => (Instruction::STX, AddressingMode::ZeroPageY),
+            0x8e => (Instruction::STX, AddressingMode::Absolute),
+
+            0x84 => (Instruction::STY, AddressingMode::ZeroPage),
+            0x94 => (Instruction::STY, AddressingMode::ZeroPageX),
+            0x8c => (Instruction::STY, AddressingMode::Absolute),
+
+            0xaa => (Instruction::TAX, AddressingMode::Implied),
+
+            0xa8 => (Instruction::TAY, AddressingMode::Implied),
+
+            0xba => (Instruction::TSX, AddressingMode::Implied),
+
+            0x8a => (Instruction::TXA, AddressingMode::Implied),
+
+            0x9a => (Instruction::TXS, AddressingMode::Implied),
+
+            0x98 => (Instruction::TYA, AddressingMode::Implied),
+
             0x69 => (Instruction::ADC, AddressingMode::Immediate),
             0x65 => (Instruction::ADC, AddressingMode::ZeroPage),
             0x75 => (Instruction::ADC, AddressingMode::ZeroPageX),
@@ -221,19 +270,17 @@ impl Cpu {
             0x00 => (Instruction::BRK, AddressingMode::Implied),
             0xea => (Instruction::NOP, AddressingMode::Implied),
 
-            _ => panic!("Invalid opecode: {:08x}", opecode),
+            _ => panic!("Invalid opcode: {:08x}", opcode),
         }
     }
 
     pub fn step(&mut self) {
         let pre_pc = self.register.pc;
-        let opecode = self.fetch_code8(0);
-        let (instruction, addressing) = self.instructions(opecode);
+        let opcode = self.fetch_code8(0);
+        let (instruction, addressing) = self.instructions(opcode);
 
-        println!(
-            "[fetched opecode] opecode: {:?}, addressing: {:?}",
-            instruction, addressing
-        );
+        println!("[fetched instruction] {:?}", instruction);
+        println!("[fetched addressing mode] {:?}", addressing);
 
         let addr = match addressing {
             AddressingMode::Implied => self.implied(),
