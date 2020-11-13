@@ -25,6 +25,14 @@ impl Cpu {
         }
     }
 
+    pub fn flag_i(&mut self, active: bool) {
+        if active {
+            self.register.p = self.register.p | 0x04u8;
+        } else {
+            self.register.p = self.register.p & (!0x04u8);
+        }
+    }
+
     pub fn flag_c(&mut self, instruction: String, b: u8) {
         if (b as u16 >> 8) != 0 {
             if instruction == "ADC" {

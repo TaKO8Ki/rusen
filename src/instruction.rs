@@ -274,4 +274,20 @@ impl Cpu {
             self.register.pc = ((upper1 as u16) << 8) as u16 | lower1 as u16
         }
     }
+
+    pub fn txs(&mut self) {
+        self.register.s = self.register.x as u16 | 0x0100;
+        self.flag_n(self.register.s as u8);
+        self.flag_z(self.register.s as u8)
+    }
+
+    pub fn ldx(&mut self, addr: u16) {
+        self.register.x = self.fetch_memory8(addr);
+        self.flag_n(self.register.x);
+        self.flag_z(self.register.x);
+    }
+
+    pub fn sei(&mut self) {
+        self.register.p = self.register.p | 0x04
+    }
 }

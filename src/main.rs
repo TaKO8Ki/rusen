@@ -10,8 +10,9 @@ fn main() {
     let mut cpu = Cpu::default();
     cpu.load(buffer);
     cpu.initialize();
+    cpu.reset();
 
-    for i in 0..10 {
+    for i in 0..15 {
         println!("================ {} ================", i);
         cpu.step();
     }
@@ -47,9 +48,8 @@ mod test {
                 a: 0x1e,
                 x: 0x0d,
                 y: 0x00,
-                s: 0xfd,
+                s: 0x01ff,
                 p: 0x34,
-                sp: 0x01ff,
                 pc: 0x804e,
             }
         )

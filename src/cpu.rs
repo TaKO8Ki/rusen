@@ -9,16 +9,15 @@ pub struct Cpu {
     pub ram: [u8; 0x10000],
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct Register {
     pub a: u8,
     pub x: u8,
     pub y: u8,
-    pub s: u8,
+    pub s: u16,
     // status register
     // 0: C, 1: Z, 2: I, 3: D, 4: B, 5: R, 6: V, 7: N
     pub p: u8,
-    pub sp: u16,
     pub pc: u16,
 }
 
@@ -37,18 +36,26 @@ impl Default for Register {
             a: 0,
             x: 0,
             y: 0,
-            s: 0xfd,
+            s: 0x01fd,
             p: 0x34,
-            sp: 0x01fd,
             pc: 0,
         }
     }
 }
 
+impl std::fmt::Debug for Register {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "Register {{ a: {:x}, x: {:x}, y: {:x}, s: {:x}, p: {:x}, pc: {:x} }}",
+            self.a, self.x, self.y, self.s, self.p, self.pc
+        )?;
+        Ok(())
+    }
+}
+
 impl Cpu {
     pub fn initialize(&mut self) {
-        self.register.s = 0xfd;
-        self.register.p = 0x34;
         let lower = self.fetch_memory8(0xfffc);
         let upper = self.fetch_memory8(0xfffd);
         self.register.pc = (upper as u16) << 8 | lower as u16;
@@ -80,7 +87,7 @@ impl Cpu {
     }
 
     pub fn instructions(&self, opcode: u8) -> (Instruction, AddressingMode) {
-        println!("[fetched opcode] {}", opcode);
+        println!("[opcode] {:x}", opcode);
         match opcode {
             0xa9 => (Instruction::LDA, AddressingMode::Immediate),
             0xa5 => (Instruction::LDA, AddressingMode::ZeroPage),
@@ -274,13 +281,19 @@ impl Cpu {
         }
     }
 
+    pub fn reset(&mut self) {
+        println!("[interrupt] RESET");
+        self.flag_i(true);
+    }
+
     pub fn step(&mut self) {
         let pre_pc = self.register.pc;
         let opcode = self.fetch_code8(0);
         let (instruction, addressing) = self.instructions(opcode);
 
-        println!("[fetched instruction] {:?}", instruction);
-        println!("[fetched addressing mode] {:?}", addressing);
+        println!("[instruction] {:?}", instruction);
+        println!("[addressing mode] {:?}", addressing);
+        println!("[before] {:?}", self.register);
 
         let addr = match addressing {
             AddressingMode::Implied => self.implied(),
@@ -334,12 +347,12 @@ impl Cpu {
             // Instruction::SEC => self.sec(addr),
             // Instruction::CLI => self.cli(addr),
             // Instruction::CLC => self.clc(addr),
-            // Instruction::SEI => self.sei(addr),
+            Instruction::SEI => self.sei(),
             // Instruction::CLD => self.cld(addr),
             // Instruction::SED => self.sed(addr),
             // Instruction::CLV => self.clv(addr),
             // Instruction::LDA => self.lda(addr),
-            // Instruction::LDX => self.ldx(addr),
+            Instruction::LDX => self.ldx(addr),
             // Instruction::LDY => self.ldy(addr),
             // Instruction::STA => self.sta(addr),
             // Instruction::STX => self.stx(addr),
@@ -349,7 +362,7 @@ impl Cpu {
             // Instruction::TXA => self.txa(addr),
             // Instruction::TYA => self.tya(addr),
             // Instruction::TSX => self.tsx(addr),
-            // Instruction::TXS => self.txs(addr),
+            Instruction::TXS => self.txs(),
             // Instruction::PHA => self.pha(addr),
             // Instruction::PLA => self.pla(addr),
             // Instruction::PHP => self.php(addr),
@@ -357,6 +370,6 @@ impl Cpu {
             // Instruction::NOP => self.nop(addr),
             _ => (),
         }
-        println!("{:?}", self.register);
+        println!("[after] {:?}", self.register);
     }
 }
