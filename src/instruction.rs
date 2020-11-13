@@ -287,7 +287,35 @@ impl Cpu {
         self.flag_z(self.register.x);
     }
 
+    pub fn ldy(&mut self, addr: u16) {
+        self.register.y = self.fetch_memory8(addr);
+        self.flag_n(self.register.y);
+        self.flag_z(self.register.y);
+    }
+
     pub fn sei(&mut self) {
         self.register.p = self.register.p | 0x04
+    }
+
+    pub fn lda(&mut self, addr: u16) {
+        self.register.a = self.fetch_memory8(addr);
+        self.flag_n(self.register.a);
+        self.flag_z(self.register.a);
+    }
+
+    pub fn sta(&mut self, addr: u16) {
+        self.set_memory8(addr, self.register.a)
+    }
+
+    pub fn inx(&mut self) {
+        self.register.x += 1;
+        self.flag_n(self.register.x);
+        self.flag_z(self.register.x);
+    }
+
+    pub fn dey(&mut self) {
+        self.register.y -= 1;
+        self.flag_n(self.register.y);
+        self.flag_z(self.register.y);
     }
 }

@@ -89,12 +89,10 @@ impl Cpu {
     }
 
     pub fn relative(&mut self) -> u16 {
-        let lower = self.fetch_code8(1);
-        let upper = self.register.pc + 2;
-        let addr = upper << 8 | (lower + self.register.y) as u16;
-
+        let delta = self.fetch_code8(1);
         self.register.pc += 2;
-        addr
+        let addr = self.register.pc as i32 + (delta as i8) as i32;
+        addr as u16
     }
 
     pub fn indexed_indirect(&mut self) -> u16 {

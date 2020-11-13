@@ -12,7 +12,7 @@ fn main() {
     cpu.initialize();
     cpu.reset();
 
-    for i in 0..15 {
+    for i in 0..50 {
         println!("================ {} ================", i);
         cpu.step();
     }
