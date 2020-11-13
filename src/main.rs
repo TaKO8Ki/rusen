@@ -1,7 +1,6 @@
 use rusen::cpu::Cpu;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::Read;
-use std::io::{self, prelude::*};
 
 fn main() {
     let mut f = File::open("sample1.nes").expect("no file found");
@@ -12,7 +11,7 @@ fn main() {
     cpu.initialize();
     cpu.reset();
 
-    for i in 0..50 {
+    for i in 0..175 {
         println!("================ {} ================", i);
         cpu.step();
     }

@@ -106,7 +106,7 @@ impl Cpu {
         self.flag_z(value);
     }
 
-    pub fn asl(&mut self, addr: u8) {
+    pub fn asl(&mut self, _addr: u8) {
         if self.register.a & 0x80 > 0 {
             self.set_c_flag()
         } else {
@@ -117,7 +117,7 @@ impl Cpu {
         self.flag_z(self.register.a);
     }
 
-    pub fn lsr(&mut self, addr: u8) {
+    pub fn lsr(&mut self, _addr: u8) {
         if self.register.a & 0x01 > 0 {
             self.set_c_flag()
         } else {
@@ -128,7 +128,7 @@ impl Cpu {
         self.flag_z(self.register.a);
     }
 
-    pub fn rol(&mut self, addr: u8) {
+    pub fn rol(&mut self, _addr: u8) {
         let c_flag = self.register.p & 0x01;
         if self.register.a & 0x80 > 0 {
             self.set_c_flag()
@@ -147,7 +147,7 @@ impl Cpu {
         self.flag_z(self.register.a)
     }
 
-    pub fn ror(&mut self, addr: u8) {
+    pub fn ror(&mut self, _addr: u8) {
         let c_flag = self.register.p & 0x01;
         if self.register.a & 0x01 > 0 {
             self.set_c_flag()
@@ -232,8 +232,8 @@ impl Cpu {
         }
     }
 
-    pub fn jmp(&mut self, addr: u8) {
-        self.register.pc = addr as u16
+    pub fn jmp(&mut self, addr: u16) {
+        self.register.pc = addr
     }
 
     pub fn jsr(&mut self, addr: u8) {

@@ -287,7 +287,6 @@ impl Cpu {
     }
 
     pub fn step(&mut self) {
-        let pre_pc = self.register.pc;
         let opcode = self.fetch_code8(0);
         let (instruction, addressing) = self.instructions(opcode);
 
@@ -330,7 +329,7 @@ impl Cpu {
             Instruction::BPL => self.bpl(addr),
             Instruction::BMI => self.bmi(addr),
             Instruction::BIT => self.bit(addr as u8),
-            Instruction::JMP => self.jmp(addr as u8),
+            Instruction::JMP => self.jmp(addr),
             Instruction::JSR => self.jsr(addr as u8),
             Instruction::RTS => self.rts(),
             Instruction::BRK => self.brk(),
