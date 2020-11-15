@@ -7,3 +7,5 @@
 NES Emulator written in Rust
 
 - [x] pass CPU test
+
+![test](./resources/test.png)
