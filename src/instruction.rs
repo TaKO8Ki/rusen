@@ -64,25 +64,23 @@ impl Cpu {
     pub fn adc(&mut self, addr: u16) {
         let c_flag = self.register.p & 0x01;
         let a_flag = self.register.a;
-        let value = (self.register.a + self.fetch_memory8(addr) + c_flag) & (0xff);
-        let value16 = self.register.a + self.fetch_memory8(addr) + c_flag;
+        let value = self.register.a + self.fetch_memory8(addr) + c_flag;
         self.register.a = value;
         self.flag_n(value);
-        self.flag_v(a_flag, value, value16);
+        self.flag_v(a_flag, value, value);
         self.flag_z(value);
-        self.flag_c(Instruction::ADC, value16 as u16);
+        self.flag_c(Instruction::ADC, value as u16);
     }
 
     pub fn sbc(&mut self, addr: u16) {
         let not_c_flag = !self.register.p & 0x01;
         let a_flag = self.register.a;
-        let value = (self.register.a - self.fetch_memory8(addr) - not_c_flag) & (0xff);
-        let value16 = self.register.a - self.fetch_memory8(addr) - not_c_flag;
+        let value = self.register.a - self.fetch_memory8(addr) - not_c_flag;
         self.register.a = value;
         self.flag_n(value);
-        self.flag_v(a_flag, value, value16);
+        self.flag_v(a_flag, value, value);
         self.flag_z(value);
-        self.flag_c(Instruction::SBC, value16 as u16);
+        self.flag_c(Instruction::SBC, value as u16);
     }
 
     pub fn and(&mut self, addr: u16) {
