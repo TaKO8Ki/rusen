@@ -333,7 +333,7 @@ impl Cpu {
             Instruction::JSR => self.jsr(addr),
             Instruction::RTS => self.rts(),
             Instruction::BRK => self.brk(),
-            // Instruction::RTI => self.rti(addr),
+            Instruction::RTI => self.rti(),
             Instruction::CMP => self.cmp(addr),
             Instruction::CPX => self.cpx(addr),
             Instruction::CPY => self.cpy(addr),
@@ -367,7 +367,6 @@ impl Cpu {
             Instruction::PHP => self.php(),
             Instruction::PLP => self.plp(),
             Instruction::NOP => self.nop(),
-            _ => (),
         }
         println!("[after] {:?}", self.register);
     }

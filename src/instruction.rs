@@ -166,6 +166,18 @@ impl Cpu {
         self.flag_z(self.register.a);
     }
 
+    pub fn rti(&mut self) {
+        let sr = self.fetch_memory8(0x100 + self.register.s + 1);
+        self.register.s += 1;
+        self.register.p = sr;
+        let lower = self.fetch_memory8(0x100 + self.register.s + 1);
+        self.register.s += 1;
+        let upper = self.fetch_memory8(0x100 + self.register.s + 1);
+        self.register.s += 1;
+        self.register.pc = (upper as u16) << 8 | lower as u16;
+        self.ram[0x2000] = self.ram[0x2000] | 0x80;
+    }
+
     pub fn bcc(&mut self, addr: u16) {
         let c_flag = self.register.p & 0x01;
         if c_flag == 0 {
