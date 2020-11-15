@@ -112,7 +112,7 @@ impl Cpu {
         } else {
             self.clear_c_flag()
         }
-        self.register.a = self.register.a << 1;
+        self.register.a <<= 1;
         self.flag_n(self.register.a);
         self.flag_z(self.register.a);
     }
@@ -123,7 +123,7 @@ impl Cpu {
         } else {
             self.clear_c_flag()
         }
-        self.register.a = self.register.a >> 1;
+        self.register.a >>= 1;
         self.flag_n(self.register.a);
         self.flag_z(self.register.a);
     }
@@ -136,7 +136,7 @@ impl Cpu {
             self.clear_c_flag()
         }
 
-        self.register.a = self.register.a << 1;
+        self.register.a <<= 1;
         if c_flag > 0 {
             self.register.a |= 0x01
         } else {
@@ -155,7 +155,7 @@ impl Cpu {
             self.clear_c_flag()
         }
 
-        self.register.a = self.register.a >> 1;
+        self.register.a >>= 1;
         if c_flag > 0 {
             self.register.a |= 0x80
         } else {
@@ -175,7 +175,7 @@ impl Cpu {
         let upper = self.fetch_memory8(0x100 + self.register.s + 1);
         self.register.s += 1;
         self.register.pc = (upper as u16) << 8 | lower as u16;
-        self.ram[0x2000] = self.ram[0x2000] | 0x80;
+        self.ram[0x2000] |= 0x80;
     }
 
     pub fn bcc(&mut self, addr: u16) {
@@ -238,9 +238,9 @@ impl Cpu {
         self.flag_z(value & self.register.a);
         self.flag_n(value);
         if (value & 0x40) != 0 {
-            self.register.p = self.register.p | 0x40
+            self.register.p |= 0x40
         } else {
-            self.register.p = self.register.p & 0xbf
+            self.register.p &= 0xbf
         }
     }
 
@@ -269,7 +269,7 @@ impl Cpu {
     pub fn brk(&mut self) {
         let iflag = self.register.p & 0x04;
         if iflag == 0 {
-            self.register.p = self.register.p | 0x10;
+            self.register.p |= 0x10;
             self.register.pc += 1;
 
             let upper0 = (self.register.pc) >> 8;
@@ -279,7 +279,7 @@ impl Cpu {
             self.set_memory8(0x100 + self.register.s as u16 - 2, self.register.p);
             self.register.s -= 3;
 
-            self.register.p = self.register.p | 0x04;
+            self.register.p |= 0x04;
 
             let upper1 = self.fetch_memory8(0xffff);
             let lower1 = self.fetch_memory8(0xfffe);
@@ -306,7 +306,7 @@ impl Cpu {
     }
 
     pub fn sei(&mut self) {
-        self.register.p = self.register.p | 0x04
+        self.register.p |= 0x04
     }
 
     pub fn lda(&mut self, addr: u16) {
@@ -379,7 +379,7 @@ impl Cpu {
     }
 
     pub fn sec(&mut self) {
-        self.register.p = self.register.p | 0x01
+        self.register.p |= 0x01
     }
 
     pub fn cli(&mut self) {
@@ -399,7 +399,7 @@ impl Cpu {
     }
 
     pub fn clv(&mut self) {
-        self.register.p = self.register.p & 0xbf
+        self.register.p &= 0xbf
     }
 
     pub fn stx(&mut self, addr: u16) {
