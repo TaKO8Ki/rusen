@@ -61,46 +61,46 @@ pub enum Instruction {
 }
 
 impl Cpu {
-    pub fn adc(&mut self, addr: u8) {
+    pub fn adc(&mut self, addr: u16) {
         let c_flag = self.register.p & 0x01;
         let a_flag = self.register.a;
-        let value = (self.register.a + self.fetch_memory8(addr as u16) + c_flag) & (0xff);
-        let value16 = self.register.a + self.fetch_memory8(addr as u16) + c_flag;
+        let value = (self.register.a + self.fetch_memory8(addr) + c_flag) & (0xff);
+        let value16 = self.register.a + self.fetch_memory8(addr) + c_flag;
         self.register.a = value;
         self.flag_n(value);
         self.flag_v(a_flag, value, value16);
         self.flag_z(value);
-        self.flag_c("ADC".to_string(), value16);
+        self.flag_c(Instruction::ADC, value16 as u16);
     }
 
-    pub fn sbc(&mut self, addr: u8) {
+    pub fn sbc(&mut self, addr: u16) {
         let not_c_flag = !self.register.p & 0x01;
         let a_flag = self.register.a;
-        let value = (self.register.a - self.fetch_memory8(addr as u16) - not_c_flag) & (0xff);
-        let value16 = self.register.a - self.fetch_memory8(addr as u16) - not_c_flag;
+        let value = (self.register.a - self.fetch_memory8(addr) - not_c_flag) & (0xff);
+        let value16 = self.register.a - self.fetch_memory8(addr) - not_c_flag;
         self.register.a = value;
         self.flag_n(value);
         self.flag_v(a_flag, value, value16);
         self.flag_z(value);
-        self.flag_c("SBC".to_string(), value16);
+        self.flag_c(Instruction::SBC, value16 as u16);
     }
 
-    pub fn and(&mut self, addr: u8) {
-        let value = self.register.a & self.fetch_memory8(addr as u16);
+    pub fn and(&mut self, addr: u16) {
+        let value = self.register.a & self.fetch_memory8(addr);
         self.register.a = value;
         self.flag_n(value);
         self.flag_z(value);
     }
 
-    pub fn ora(&mut self, addr: u8) {
-        let value = self.register.a | self.fetch_memory8(addr as u16);
+    pub fn ora(&mut self, addr: u16) {
+        let value = self.register.a | self.fetch_memory8(addr);
         self.register.a = value;
         self.flag_n(value);
         self.flag_z(value);
     }
 
-    pub fn eor(&mut self, addr: u8) {
-        let value = self.register.a | self.fetch_memory8(addr as u16);
+    pub fn eor(&mut self, addr: u16) {
+        let value = self.register.a | self.fetch_memory8(addr);
         self.register.a = value;
         self.flag_n(value);
         self.flag_z(value);
@@ -221,8 +221,8 @@ impl Cpu {
         }
     }
 
-    pub fn bit(&mut self, addr: u8) {
-        let value = self.fetch_memory8(addr as u16);
+    pub fn bit(&mut self, addr: u16) {
+        let value = self.fetch_memory8(addr);
         self.flag_z(value & self.register.a);
         self.flag_n(value);
         if (value & 0x40) != 0 {
@@ -236,11 +236,11 @@ impl Cpu {
         self.register.pc = addr
     }
 
-    pub fn jsr(&mut self, addr: u8) {
+    pub fn jsr(&mut self, addr: u16) {
         let upper = (self.register.pc - 1) >> 8;
         let lower = self.register.pc - 1;
-        self.set_memory8(0x100 + self.register.s as u16, upper as u8);
-        self.set_memory8(0x100 + self.register.s as u16 - 1, lower as u8);
+        self.set_memory8(0x100 + self.register.s, upper as u8);
+        self.set_memory8(0x100 + self.register.s - 1, lower as u8);
         self.register.s -= 2;
         self.register.pc = addr as u16;
     }
@@ -313,9 +313,144 @@ impl Cpu {
         self.flag_z(self.register.x);
     }
 
+    pub fn dex(&mut self) {
+        self.register.x -= 1;
+        self.flag_n(self.register.x);
+        self.flag_z(self.register.x);
+    }
+
+    pub fn iny(&mut self) {
+        self.register.y += 1;
+        self.flag_n(self.register.y);
+        self.flag_z(self.register.y);
+    }
+
     pub fn dey(&mut self) {
         self.register.y -= 1;
         self.flag_n(self.register.y);
         self.flag_z(self.register.y);
     }
+
+    pub fn cmp(&mut self, addr: u16) {
+        let value = self.register.a - self.fetch_memory8(addr);
+        let value16 = self.register.a - self.fetch_memory8(addr);
+
+        self.flag_n(value);
+        self.flag_z(value);
+        self.flag_c(Instruction::CMP, value16 as u16);
+    }
+
+    pub fn cpx(&mut self, addr: u16) {
+        let value = self.register.x - self.fetch_memory8(addr);
+        let value16 = self.register.x - self.fetch_memory8(addr);
+
+        self.flag_n(value);
+        self.flag_z(value);
+        self.flag_c(Instruction::CPX, value16 as u16);
+    }
+
+    pub fn cpy(&mut self, addr: u16) {
+        let value = self.register.y - self.fetch_memory8(addr);
+        let value16 = self.register.y - self.fetch_memory8(addr);
+
+        self.flag_n(value);
+        self.flag_z(value);
+        self.flag_c(Instruction::CPY, value16 as u16);
+    }
+
+    pub fn inc(&mut self, addr: u16) {
+        self.set_memory8(addr, self.fetch_memory8(addr) + 1)
+    }
+
+    pub fn dec(&mut self, addr: u16) {
+        self.set_memory8(addr, self.fetch_memory8(addr) - 1)
+    }
+
+    pub fn sec(&mut self) {
+        self.register.p = self.register.p | 0x01
+    }
+
+    pub fn cli(&mut self) {
+        self.flag_i(false)
+    }
+
+    pub fn clc(&mut self, addr: u16) {
+        self.flag_c(Instruction::CLC, addr)
+    }
+
+    pub fn cld(&mut self) {
+        self.flag_d(false);
+    }
+
+    pub fn sed(&mut self) {
+        self.flag_d(true);
+    }
+
+    pub fn clv(&mut self) {
+        self.register.p = self.register.p & 0xbf
+    }
+
+    pub fn stx(&mut self, addr: u16) {
+        self.set_memory8(addr, self.register.x)
+    }
+
+    pub fn sty(&mut self, addr: u16) {
+        self.set_memory8(addr, self.register.y)
+    }
+
+    pub fn tax(&mut self) {
+        self.register.x = self.register.a;
+        self.flag_n(self.register.x);
+        self.flag_z(self.register.x)
+    }
+
+    pub fn tay(&mut self) {
+        self.register.y = self.register.a;
+        self.flag_n(self.register.y);
+        self.flag_z(self.register.y)
+    }
+
+    pub fn txa(&mut self) {
+        self.register.a = self.register.x;
+        self.flag_n(self.register.a);
+        self.flag_z(self.register.a)
+    }
+
+    pub fn tya(&mut self) {
+        self.register.a = self.register.y;
+        self.flag_n(self.register.a);
+        self.flag_z(self.register.a)
+    }
+
+    pub fn tsx(&mut self) {
+        self.register.x = self.register.s as u8;
+        self.flag_n(self.register.x);
+        self.flag_z(self.register.x)
+    }
+
+    pub fn pha(&mut self) {
+        self.set_memory8(0x100 + self.register.s, self.register.a);
+        self.register.s -= 1
+    }
+
+    pub fn pla(&mut self) {
+        let value = self.fetch_memory8(0x0100 + self.register.s + 1);
+        self.register.a = value;
+        self.register.s += 1;
+        self.flag_n(value);
+        self.flag_z(value);
+    }
+
+    pub fn php(&mut self) {
+        self.set_memory8(0x100 + self.register.s, self.register.p);
+        self.register.s -= 1
+    }
+
+    pub fn plp(&mut self) {
+        let value = self.fetch_memory8(0x0100 + self.register.s + 1);
+        self.register.p = value;
+        self.register.s += 1;
+    }
+
+    pub fn nop(&mut self) {}
 }

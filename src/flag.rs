@@ -1,4 +1,5 @@
 use crate::cpu::Cpu;
+use crate::instruction::Instruction;
 
 impl Cpu {
     pub fn flag_n(&mut self, b: u8) {
@@ -27,25 +28,33 @@ impl Cpu {
 
     pub fn flag_i(&mut self, active: bool) {
         if active {
-            self.register.p = self.register.p | 0x04u8;
+            self.register.p = self.register.p | 0x04;
         } else {
-            self.register.p = self.register.p & (!0x04u8);
+            self.register.p = self.register.p & (!0x04);
         }
     }
 
-    pub fn flag_c(&mut self, instruction: String, b: u8) {
-        if (b as u16 >> 8) != 0 {
-            if instruction == "ADC" {
+    pub fn flag_c(&mut self, instruction: Instruction, b: u16) {
+        if (b >> 8) != 0 {
+            if let Instruction::ADC = instruction {
                 self.set_c_flag()
             } else {
                 self.clear_c_flag()
             }
         } else {
-            if instruction == "ADC" {
+            if let Instruction::ADC = instruction {
                 self.clear_c_flag()
             } else {
                 self.set_c_flag()
             }
+        }
+    }
+
+    pub fn flag_d(&mut self, active: bool) {
+        if active {
+            self.register.p = self.register.p | 0x08
+        } else {
+            self.register.p = self.register.p & 0xfb
         }
     }
 
