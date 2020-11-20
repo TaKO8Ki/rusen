@@ -1,36 +1,36 @@
-use crate::cpu::Cpu;
 use crate::instruction::Instruction;
+use crate::nes::Nes;
 
-impl Cpu {
+impl Nes {
     pub fn flag_n(&mut self, b: u8) {
         if b & 0x80 != 0 {
-            self.register.p |= 0x80
+            self.cpu.p |= 0x80
         } else {
-            self.register.p &= 0x7f
+            self.cpu.p &= 0x7f
         }
     }
 
     pub fn flag_v(&mut self, b0: u8, b1: u8, b: u8) {
         if ((b0 >> 7) ^ (b1 >> 7) != 0) && (b1 != b) {
-            self.register.p |= 0x40
+            self.cpu.p |= 0x40
         } else {
-            self.register.p &= 0xbf
+            self.cpu.p &= 0xbf
         }
     }
 
     pub fn flag_z(&mut self, b: u8) {
         if b == 0 {
-            self.register.p |= 0x02
+            self.cpu.p |= 0x02
         } else {
-            self.register.p &= 0xfd
+            self.cpu.p &= 0xfd
         }
     }
 
     pub fn flag_i(&mut self, active: bool) {
         if active {
-            self.register.p |= 0x04;
+            self.cpu.p |= 0x04;
         } else {
-            self.register.p &= !0x04;
+            self.cpu.p &= !0x04;
         }
     }
 
@@ -50,17 +50,17 @@ impl Cpu {
 
     pub fn flag_d(&mut self, active: bool) {
         if active {
-            self.register.p |= 0x08
+            self.cpu.p |= 0x08
         } else {
-            self.register.p &= 0xfb
+            self.cpu.p &= 0xfb
         }
     }
 
     pub fn set_c_flag(&mut self) {
-        self.register.p |= 0x01
+        self.cpu.p |= 0x01
     }
 
     pub fn clear_c_flag(&mut self) {
-        self.register.p &= 0xfe
+        self.cpu.p &= 0xfe
     }
 }

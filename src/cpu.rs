@@ -5,13 +5,8 @@ use crate::nes::Nes;
 const PRG_ROM_PAGE_SIZE: u16 = 0x4000;
 const CHR_ROM_PAGE_SIZE: u16 = 0x2000;
 
-pub struct Cpu {
-    pub register: Register,
-    pub ram: [u8; 0x10000],
-}
-
 #[derive(PartialEq)]
-pub struct Register {
+pub struct Cpu {
     pub a: u8,
     pub x: u8,
     pub y: u8,
@@ -25,15 +20,6 @@ pub struct Register {
 impl Default for Cpu {
     fn default() -> Self {
         Cpu {
-            register: Register::default(),
-            ram: [0; 0x10000],
-        }
-    }
-}
-
-impl Default for Register {
-    fn default() -> Self {
-        Register {
             a: 0,
             x: 0,
             y: 0,
@@ -44,7 +30,7 @@ impl Default for Register {
     }
 }
 
-impl std::fmt::Debug for Register {
+impl std::fmt::Debug for Cpu {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
@@ -55,11 +41,11 @@ impl std::fmt::Debug for Register {
     }
 }
 
-impl Cpu {
+impl Nes {
     pub fn initialize(&mut self) {
         let lower = self.fetch_memory8(0xfffc);
         let upper = self.fetch_memory8(0xfffd);
-        self.register.pc = (upper as u16) << 8 | lower as u16;
+        self.cpu.pc = (upper as u16) << 8 | lower as u16;
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
@@ -84,7 +70,7 @@ impl Cpu {
     }
 
     pub fn fetch_code8(&self, index: u8) -> u8 {
-        self.ram[(self.register.pc + index as u16) as usize]
+        self.ram[(self.cpu.pc + index as u16) as usize]
     }
 
     pub fn instructions(&self, opcode: u8) -> (Instruction, AddressingMode) {
@@ -293,7 +279,7 @@ impl Cpu {
 
         println!("[instruction] {:?}", instruction);
         println!("[addressing mode] {:?}", addressing);
-        println!("[before] {:?}", self.register);
+        println!("[before] {:?}", self.cpu);
 
         let addr = match addressing {
             AddressingMode::Implied => self.implied(),
@@ -369,6 +355,6 @@ impl Cpu {
             Instruction::PLP => self.plp(),
             Instruction::NOP => self.nop(),
         }
-        println!("[after] {:?}", self.register);
+        println!("[after] {:?}", self.cpu);
     }
 }

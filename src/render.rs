@@ -1,4 +1,4 @@
-use crate::cpu::Cpu;
+use crate::nes::Nes;
 use ggez::event;
 use ggez::{Context, GameResult};
 
@@ -18,7 +18,7 @@ impl event::EventHandler for GameState {
     }
 }
 
-impl Cpu {
+impl Nes {
     pub fn render(&mut self) -> GameResult {
         let (ctx, events_loop) = &mut ggez::ContextBuilder::new("nes emulator", "TaKO8Ki")
             .window_setup(ggez::conf::WindowSetup::default().title("hello world"))

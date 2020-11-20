@@ -1,4 +1,4 @@
-use rusen::cpu::Cpu;
+use rusen::nes::Nes;
 use std::fs::File;
 use std::io::Read;
 
@@ -6,30 +6,30 @@ fn main() {
     let mut f = File::open("sample1.nes").expect("no file found");
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer).expect("buffer overflow");
-    let mut cpu = Cpu::default();
-    cpu.load(buffer);
-    cpu.initialize();
-    cpu.reset();
+    let mut nes = Nes::default();
+    nes.load(buffer);
+    nes.initialize();
+    nes.reset();
 
-    cpu.render();
+    nes.render().unwrap();
 
     for i in 0..175 {
         println!("================ {} ================", i);
-        cpu.step();
+        nes.step();
     }
 }
 
-pub fn run_cpu(cpu: &mut Cpu, end: u8) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_cpu(nes: &mut Nes, end: u8) -> Result<(), Box<dyn std::error::Error>> {
     let mut f = File::open("sample1.nes").expect("no file found");
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer).expect("buffer overflow");
     println!("{:?}", buffer);
-    cpu.load(buffer);
-    cpu.initialize();
+    nes.load(buffer);
+    nes.initialize();
 
     for i in 0..end {
         println!("================ {} ================", i);
-        cpu.step();
+        nes.step();
     }
     Ok(())
 }
@@ -37,15 +37,16 @@ pub fn run_cpu(cpu: &mut Cpu, end: u8) -> Result<(), Box<dyn std::error::Error>>
 #[cfg(test)]
 mod test {
     use super::run_cpu;
-    use rusen::cpu::{Cpu, Register};
+    use rusen::cpu::Cpu;
+    use rusen::nes::Nes;
 
     #[test]
     fn test_run_cpu() {
-        let mut cpu = Cpu::default();
-        run_cpu(&mut cpu, 175).unwrap();
+        let mut nes = Nes::default();
+        run_cpu(&mut nes, 175).unwrap();
         assert_eq!(
-            cpu.register,
-            Register {
+            nes.cpu,
+            Cpu {
                 a: 0x1e,
                 x: 0x0d,
                 y: 0x00,
