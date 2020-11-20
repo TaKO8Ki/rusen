@@ -11,6 +11,8 @@ fn main() {
     cpu.initialize();
     cpu.reset();
 
+    cpu.render();
+
     for i in 0..175 {
         println!("================ {} ================", i);
         cpu.step();

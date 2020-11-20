@@ -1,4 +1,5 @@
 use crate::cpu::Cpu;
+use crate::nes::Nes;
 
 #[derive(Debug)]
 pub enum Instruction {

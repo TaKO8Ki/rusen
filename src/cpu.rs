@@ -1,5 +1,6 @@
 use crate::addressing::AddressingMode;
 use crate::instruction::Instruction;
+use crate::nes::Nes;
 
 const PRG_ROM_PAGE_SIZE: u16 = 0x4000;
 const CHR_ROM_PAGE_SIZE: u16 = 0x2000;
