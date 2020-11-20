@@ -34,7 +34,7 @@ impl std::fmt::Debug for Cpu {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "Register {{ a: {:x}, x: {:x}, y: {:x}, s: {:x}, p: {:x}, pc: {:x} }}",
+            "Cpu {{ a: {:x}, x: {:x}, y: {:x}, s: {:x}, p: {:x}, pc: {:x} }}",
             self.a, self.x, self.y, self.s, self.p, self.pc
         )?;
         Ok(())
@@ -355,6 +355,6 @@ impl Nes {
             Instruction::PLP => self.plp(),
             Instruction::NOP => self.nop(),
         }
-        println!("[after] {:?}", self.cpu);
+        println!("[after] {:?}\n", self.cpu);
     }
 }

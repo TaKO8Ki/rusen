@@ -6,10 +6,9 @@ const WIDTH: u16 = 256;
 const HEIGHT: u8 = 240;
 const OVERLOAD: u8 = 12;
 
-struct GameState {}
-
-impl event::EventHandler for GameState {
+impl event::EventHandler for Nes {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        self.step();
         Ok(())
     }
 
@@ -19,7 +18,7 @@ impl event::EventHandler for GameState {
 }
 
 impl Nes {
-    pub fn render(&mut self) -> GameResult {
+    pub fn run(&mut self) -> GameResult {
         let (ctx, events_loop) = &mut ggez::ContextBuilder::new("nes emulator", "TaKO8Ki")
             .window_setup(ggez::conf::WindowSetup::default().title("hello world"))
             .window_mode(
@@ -28,8 +27,6 @@ impl Nes {
                     .resizable(true),
             )
             .build()?;
-
-        let state = &mut GameState {};
-        event::run(ctx, events_loop, state)
+        event::run(ctx, events_loop, self)
     }
 }

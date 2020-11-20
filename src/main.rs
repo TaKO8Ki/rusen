@@ -11,12 +11,7 @@ fn main() {
     nes.initialize();
     nes.reset();
 
-    nes.render().unwrap();
-
-    for i in 0..175 {
-        println!("================ {} ================", i);
-        nes.step();
-    }
+    nes.run().unwrap();
 }
 
 pub fn run_cpu(nes: &mut Nes, end: u8) -> Result<(), Box<dyn std::error::Error>> {
