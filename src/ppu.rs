@@ -1,4 +1,4 @@
-use crate::cpu::Cpu;
+use crate::nes::Nes;
 
 pub struct Ppu {
     pub ram: [u8; 0x4000],
@@ -26,4 +26,4 @@ impl Default for Ppu {
     }
 }
 
-impl Cpu {}
+impl Nes {}
