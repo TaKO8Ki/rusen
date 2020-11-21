@@ -1,10 +1,12 @@
 use rusen::nes::Nes;
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     let file_path = &args[1];
+    let file_stem = Path::new(file_path).file_stem().unwrap().to_str().unwrap();
 
     let mut f = File::open(file_path)?;
     let mut buffer = Vec::new();
@@ -18,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         nes.step();
     }
 
-    nes.run()?;
+    nes.run(file_stem)?;
     Ok(())
 }
 

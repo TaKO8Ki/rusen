@@ -50,9 +50,9 @@ impl event::EventHandler for Nes {
 }
 
 impl Nes {
-    pub fn run(&mut self) -> GameResult {
+    pub fn run(&mut self, file_stem: &str) -> GameResult {
         let (ctx, events_loop) = &mut ggez::ContextBuilder::new("nes emulator", "TaKO8Ki")
-            .window_setup(ggez::conf::WindowSetup::default().title("hello world"))
+            .window_setup(ggez::conf::WindowSetup::default().title(file_stem))
             .window_mode(
                 ggez::conf::WindowMode::default()
                     .dimensions(WIDTH as f32, HEIGHT as f32)
