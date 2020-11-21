@@ -1,5 +1,6 @@
 use crate::nes::Nes;
-use ggez::{graphics, Context};
+use crate::render::GridPosition;
+use ggez::graphics::{self, MeshBuilder};
 
 pub const COLORS: [[u8; 3]; 64] = [
     [0x80, 0x80, 0x80],
@@ -95,16 +96,15 @@ impl Default for Ppu {
 }
 
 impl Nes {
-    pub fn output_block(&mut self, x: u16, y: u16, ctx: &mut Context) {
-        let sprite_num = self.ppu.ram[0x2000 + x as usize + y as usize * 0x20];
-
-        let attr = self.ppu.ram[0x23c0 + (x / 4) as usize + (y / 4) as usize * 0x08];
+    pub fn build_background(&mut self, x: u16, y: u16, b_x: u16, b_y: u16, mesh: &mut MeshBuilder) {
+        let sprite_num = self.ppu.ram[0x2000 + b_x as usize + b_y as usize * 0x20];
+        let attr = self.ppu.ram[0x23c0 + b_x as usize / 4 + b_y as usize / 4 * 0x08];
         let pallete: u8;
-        if (x % 4 < 2) && (y % 4 < 2) {
+        if (b_x % 4 < 2) && (b_y % 4 < 2) {
             pallete = attr & 0x03
-        } else if (x % 4 > 2) && (y % 4 < 2) {
+        } else if (b_x % 4 > 2) && (b_y % 4 < 2) {
             pallete = (attr & 0x0c) >> 2
-        } else if (x % 4 < 2) && (y % 4 > 2) {
+        } else if (b_x % 4 < 2) && (b_y % 4 > 2) {
             pallete = (attr & 0x30) >> 4
         } else {
             pallete = (attr & 0xc0) >> 6
@@ -114,58 +114,24 @@ impl Nes {
         for i in 0..16 {
             sprite_bytes[i] = self.ppu.ram[sprite_num as usize * 16 + i];
         }
-
-        for y in 0..8 {
-            for x in 0..8 {
-                let color0 = (sprite_bytes[y] & (0x01 << (7 - x))) >> (7 - x);
-                let color1 = ((sprite_bytes[y + 8] & (0x01 << (7 - x))) >> (7 - x)) << 1;
-
-                let p = pallete * 4 + color0 + color1;
-                let (r, g, b) = (
-                    COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][0],
-                    COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][1],
-                    COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][2],
-                );
-                let rectangle = graphics::Mesh::new_rectangle(
-                    ctx,
-                    graphics::DrawMode::fill(),
-                    graphics::Rect {
-                        x: 1.0,
-                        y: 1.0,
-                        w: 1.0,
-                        h: 1.0,
-                    },
-                    [r as f32, g as f32, b as f32, 0.0].into(),
-                )
-                .unwrap();
-                graphics::draw(
-                    ctx,
-                    &rectangle,
-                    (ggez::mint::Point2 {
-                        x: x as f32,
-                        y: y as f32,
-                    },),
-                )
-                .unwrap();
-                println!("============================================================")
+        let color0 = (sprite_bytes[y as usize] & (0x01 << (7 - x))) >> (7 - x);
+        let color1 = ((sprite_bytes[y as usize + 8] & (0x01 << (7 - x))) >> (7 - x)) << 1;
+        let p = pallete * 4 + color0 + color1;
+        let (r, g, b) = (
+            COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][0],
+            COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][1],
+            COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][2],
+        );
+        mesh.rectangle(
+            graphics::DrawMode::fill(),
+            GridPosition {
+                x,
+                y: y as u16,
+                b_x,
+                b_y,
             }
-        }
+            .into(),
+            graphics::Color::from_rgb(r, g, b),
+        );
     }
-
-    // fn output_image(bytes [16]byte, pallete byte) (img *image.RGBA) {
-    //     img = image.NewRGBA(image.Rect(0, 0, 8, 8))
-
-    //     var x, y uint
-    //     for y = 0; y < 8; y++ {
-    //         for x = 0; x < 8; x++ {
-    //             color0 := (bytes[y] & (0x01 << (7 - x))) >> (7 - x)
-    //             color1 := ((bytes[y+8] & (0x01 << (7 - x))) >> (7 - x)) << 1
-
-    //             p := uint(pallete*4) + uint(color0+color1) // パレット番号 + パレット内番号
-    //             R, G, B := colors[ppu.RAM[0x3f00+p]][0], colors[ppu.RAM[0x3f00+p]][1], colors[ppu.RAM[0x3f00+p]][2]
-    //             img.Set((int)(x), (int)(y), color.RGBA{R, G, B, 0})
-    //         }
-    //     }
-    //     return img
-    // }
 }

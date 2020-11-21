@@ -3,9 +3,12 @@ use std::fs::File;
 use std::io::Read;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut f = File::open("sample1.nes").expect("no file found");
+    let args: Vec<String> = std::env::args().collect();
+    let file_path = &args[1];
+
+    let mut f = File::open(file_path)?;
     let mut buffer = Vec::new();
-    f.read_to_end(&mut buffer).expect("buffer overflow");
+    f.read_to_end(&mut buffer)?;
     let mut nes = Nes::default();
     nes.load(buffer);
     nes.initialize();
