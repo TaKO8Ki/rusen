@@ -6,6 +6,11 @@
 
 NES Emulator written in Rust
 
-- [x] pass CPU test
+## History
+
+### Hello World!
+![hello world](./resources/hello_world.png)
+
+### Pass CPU test
 
 ![test](./resources/test.png)

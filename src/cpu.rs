@@ -1,16 +1,12 @@
 use crate::addressing::AddressingMode;
 use crate::instruction::Instruction;
+use crate::nes::Nes;
 
 const PRG_ROM_PAGE_SIZE: u16 = 0x4000;
 const CHR_ROM_PAGE_SIZE: u16 = 0x2000;
 
-pub struct Cpu {
-    pub register: Register,
-    pub ram: [u8; 0x10000],
-}
-
 #[derive(PartialEq)]
-pub struct Register {
+pub struct Cpu {
     pub a: u8,
     pub x: u8,
     pub y: u8,
@@ -24,15 +20,6 @@ pub struct Register {
 impl Default for Cpu {
     fn default() -> Self {
         Cpu {
-            register: Register::default(),
-            ram: [0; 0x10000],
-        }
-    }
-}
-
-impl Default for Register {
-    fn default() -> Self {
-        Register {
             a: 0,
             x: 0,
             y: 0,
@@ -43,25 +30,28 @@ impl Default for Register {
     }
 }
 
-impl std::fmt::Debug for Register {
+impl std::fmt::Debug for Cpu {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "Register {{ a: {:x}, x: {:x}, y: {:x}, s: {:x}, p: {:x}, pc: {:x} }}",
+            "Cpu {{ a: {:x}, x: {:x}, y: {:x}, s: {:x}, p: {:x}, pc: {:x} }}",
             self.a, self.x, self.y, self.s, self.p, self.pc
         )?;
         Ok(())
     }
 }
 
-impl Cpu {
+impl Nes {
     pub fn initialize(&mut self) {
         let lower = self.fetch_memory8(0xfffc);
         let upper = self.fetch_memory8(0xfffd);
-        self.register.pc = (upper as u16) << 8 | lower as u16;
+        self.cpu.pc = (upper as u16) << 8 | lower as u16;
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
+        let mirror_flag = rom[6];
+        self.ppu.mirror = mirror_flag > 0;
+
         let prg_addr = 0x0010;
         let prg_page = rom[4];
 
@@ -71,8 +61,9 @@ impl Cpu {
         let prg_bytes = rom
             .get(prg_addr as usize..(prg_addr + prg_page as u16 * PRG_ROM_PAGE_SIZE) as usize)
             .unwrap();
-        let _chr_bytes =
-            rom.get(chr_addr as usize..(chr_addr + chr_page as u16 * CHR_ROM_PAGE_SIZE) as usize);
+        let chr_bytes = rom
+            .get(chr_addr as usize..(chr_addr + chr_page as u16 * CHR_ROM_PAGE_SIZE) as usize)
+            .unwrap();
 
         for (index, byte) in prg_bytes.iter().enumerate() {
             self.ram[0x8000 + index] = *byte;
@@ -80,10 +71,14 @@ impl Cpu {
                 self.ram[(0x8000 + index + 0x4000) as usize] = *byte
             }
         }
+
+        for (index, byte) in chr_bytes.iter().enumerate() {
+            self.ppu.ram[index] = *byte
+        }
     }
 
     pub fn fetch_code8(&self, index: u8) -> u8 {
-        self.ram[(self.register.pc + index as u16) as usize]
+        self.ram[(self.cpu.pc + index as u16) as usize]
     }
 
     pub fn instructions(&self, opcode: u8) -> (Instruction, AddressingMode) {
@@ -292,7 +287,7 @@ impl Cpu {
 
         println!("[instruction] {:?}", instruction);
         println!("[addressing mode] {:?}", addressing);
-        println!("[before] {:?}", self.register);
+        println!("[before] {:?}", self.cpu);
 
         let addr = match addressing {
             AddressingMode::Implied => self.implied(),
@@ -368,6 +363,6 @@ impl Cpu {
             Instruction::PLP => self.plp(),
             Instruction::NOP => self.nop(),
         }
-        println!("[after] {:?}", self.register);
+        println!("[after] {:?}\n", self.cpu);
     }
 }

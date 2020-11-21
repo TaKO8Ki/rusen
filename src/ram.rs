@@ -1,6 +1,6 @@
-use crate::cpu::Cpu;
+use crate::nes::Nes;
 
-impl Cpu {
+impl Nes {
     pub fn fetch_memory8(&self, address: u16) -> u8 {
         self.ram[address as usize]
     }
