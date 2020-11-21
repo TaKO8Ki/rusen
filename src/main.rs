@@ -2,7 +2,7 @@ use rusen::nes::Nes;
 use std::fs::File;
 use std::io::Read;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut f = File::open("sample1.nes").expect("no file found");
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer).expect("buffer overflow");
@@ -11,7 +11,12 @@ fn main() {
     nes.initialize();
     nes.reset();
 
-    nes.run().unwrap();
+    for _ in 0..180 {
+        nes.step();
+    }
+
+    nes.run()?;
+    Ok(())
 }
 
 pub fn run_cpu(nes: &mut Nes, end: u8) -> Result<(), Box<dyn std::error::Error>> {

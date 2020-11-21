@@ -1,5 +1,9 @@
 use crate::nes::Nes;
 
+const PPU_ADDR: u16 = 0x2006;
+const PPU_DATA: u16 = 0x2007;
+const SPRITE_DMA: u16 = 0x4014;
+
 #[derive(Debug)]
 pub enum Instruction {
     ADC,
@@ -291,30 +295,125 @@ impl Nes {
         self.flag_z(self.cpu.s as u8)
     }
 
-    pub fn ldx(&mut self, addr: u16) {
-        self.cpu.x = self.fetch_memory8(addr);
-        self.flag_n(self.cpu.x);
-        self.flag_z(self.cpu.x);
-    }
-
-    pub fn ldy(&mut self, addr: u16) {
-        self.cpu.y = self.fetch_memory8(addr);
-        self.flag_n(self.cpu.y);
-        self.flag_z(self.cpu.y);
-    }
-
     pub fn sei(&mut self) {
         self.cpu.p |= 0x04
     }
 
     pub fn lda(&mut self, addr: u16) {
-        self.cpu.a = self.fetch_memory8(addr);
+        if addr == 0x2007 {
+            self.cpu.a = self.ppu.ram[self.ppu.ptr as usize];
+            self.ppu.ptr += self.get_vram_delta()
+        } else {
+            self.cpu.a = self.fetch_memory8(addr);
+        }
         self.flag_n(self.cpu.a);
         self.flag_z(self.cpu.a);
     }
 
+    pub fn ldx(&mut self, addr: u16) {
+        if addr == 0x2007 {
+            self.cpu.x = self.ppu.ram[self.ppu.ptr as usize];
+            self.ppu.ptr += self.get_vram_delta()
+        } else {
+            self.cpu.x = self.fetch_memory8(addr);
+        }
+        self.flag_n(self.cpu.x);
+        self.flag_z(self.cpu.x);
+    }
+
+    pub fn ldy(&mut self, addr: u16) {
+        if addr == 0x2007 {
+            self.cpu.y = self.ppu.ram[self.ppu.ptr as usize];
+            self.ppu.ptr += self.get_vram_delta()
+        } else {
+            self.cpu.y = self.fetch_memory8(addr);
+        }
+        self.flag_n(self.cpu.y);
+        self.flag_z(self.cpu.y);
+    }
+
     pub fn sta(&mut self, addr: u16) {
+        match addr {
+            0x2004 => {
+                self.ppu.s_ram[self.ram[0x2003] as usize] = self.cpu.a;
+                self.ram[0x2003] += 1
+            }
+            0x2005 => {
+                if self.ppu.scroll_flag {
+                    self.ppu.scroll[1] = self.cpu.a;
+                } else {
+                    self.ppu.scroll[0] = self.cpu.a;
+                    self.ppu.scroll_flag = true
+                }
+            }
+            PPU_ADDR => self.ppu.ptr = self.ppu.ptr << 8 | self.cpu.a as u16,
+            PPU_DATA => self.set_vram(self.cpu.a),
+            SPRITE_DMA => {
+                let start = (self.cpu.a as u16) << 8;
+                for i in 0..256 {
+                    self.ppu.s_ram[i] = self.fetch_memory8(start as u16 + i as u16)
+                }
+            }
+            0x2009 => (),
+            _ => (),
+        };
         self.set_memory8(addr, self.cpu.a)
+    }
+
+    pub fn stx(&mut self, addr: u16) {
+        match addr {
+            0x2004 => {
+                self.ppu.s_ram[self.ram[0x2003] as usize] = self.cpu.x;
+                self.ram[0x2003] += 1
+            }
+            0x2005 => {
+                if self.ppu.scroll_flag {
+                    self.ppu.scroll[1] = self.cpu.x;
+                } else {
+                    self.ppu.scroll[0] = self.cpu.x;
+                    self.ppu.scroll_flag = true
+                }
+            }
+            PPU_ADDR => self.ppu.ptr = self.ppu.ptr << 8 | self.cpu.x as u16,
+            PPU_DATA => self.set_vram(self.cpu.x),
+            SPRITE_DMA => {
+                let start = (self.cpu.x as u16) << 8;
+                for i in 0..256 {
+                    self.ppu.s_ram[i] = self.fetch_memory8(start as u16 + i as u16)
+                }
+            }
+            0x2009 => (),
+            _ => (),
+        };
+        self.set_memory8(addr, self.cpu.x)
+    }
+
+    pub fn sty(&mut self, addr: u16) {
+        match addr {
+            0x2004 => {
+                self.ppu.s_ram[self.ram[0x2003] as usize] = self.cpu.y;
+                self.ram[0x2003] += 1
+            }
+            0x2005 => {
+                if self.ppu.scroll_flag {
+                    self.ppu.scroll[1] = self.cpu.y;
+                } else {
+                    self.ppu.scroll[0] = self.cpu.y;
+                    self.ppu.scroll_flag = true
+                }
+            }
+            PPU_ADDR => self.ppu.ptr = self.ppu.ptr << 8 | self.cpu.y as u16,
+            PPU_DATA => self.set_vram(self.cpu.y),
+            SPRITE_DMA => {
+                let start = (self.cpu.y as u16) << 8;
+                for i in 0..256 {
+                    self.ppu.s_ram[i] = self.fetch_memory8(start as u16 + i as u16)
+                }
+            }
+            0x2009 => (),
+            _ => (),
+        };
+        self.set_memory8(addr, self.cpu.y)
     }
 
     pub fn inx(&mut self) {
@@ -400,14 +499,6 @@ impl Nes {
         self.cpu.p &= 0xbf
     }
 
-    pub fn stx(&mut self, addr: u16) {
-        self.set_memory8(addr, self.cpu.x)
-    }
-
-    pub fn sty(&mut self, addr: u16) {
-        self.set_memory8(addr, self.cpu.y)
-    }
-
     pub fn tax(&mut self) {
         self.cpu.x = self.cpu.a;
         self.flag_n(self.cpu.x);
@@ -463,4 +554,38 @@ impl Nes {
     }
 
     pub fn nop(&mut self) {}
+
+    fn set_vram(&mut self, value: u8) {
+        if self.ppu.ptr > 0x4000 {}
+        self.ppu.ram[self.ppu.ptr as usize] = value;
+        if self.ppu.ptr == 0x3f00
+            || self.ppu.ptr == 0x3f04
+            || self.ppu.ptr == 0x3f08
+            || self.ppu.ptr == 0x3f0c
+        {
+            self.ppu.ram[self.ppu.ptr as usize + 0x10] = value
+        } else if self.ppu.ptr == 0x3f10
+            || self.ppu.ptr == 0x3f14
+            || self.ppu.ptr == 0x3f18
+            || self.ppu.ptr == 0x3f1c
+        {
+            self.ppu.ram[self.ppu.ptr as usize - 0x10] = value
+        } else if !self.ppu.mirror
+            && ((0x2000 <= self.ppu.ptr && self.ppu.ptr < 0x2400)
+                || (0x2800 <= self.ppu.ptr && self.ppu.ptr < 0x2c00))
+        {
+            self.ppu.ram[self.ppu.ptr as usize + 0x0400] = value
+        } else if self.ppu.mirror && (0x2000 <= self.ppu.ptr && self.ppu.ptr < 0x2800) {
+            self.ppu.ram[self.ppu.ptr as usize + 0x0800] = value
+        }
+        self.ppu.ptr += self.get_vram_delta()
+    }
+
+    fn get_vram_delta(&mut self) -> u16 {
+        let value = self.ram[0x2000];
+        if (value & 0x04) > 0 {
+            return 32;
+        }
+        1
+    }
 }

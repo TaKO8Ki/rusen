@@ -2,6 +2,15 @@ use crate::instruction::Instruction;
 use crate::nes::Nes;
 
 impl Nes {
+    pub fn set_v_blank(&mut self) {
+        self.ram[0x2002] = self.ram[0x2002] | 0x80
+    }
+
+    // clearVBlank VBlankを解除
+    pub fn clear_v_blank(&mut self) {
+        self.ram[0x2002] = self.ram[0x2002] & 0x7f
+    }
+
     pub fn flag_n(&mut self, b: u8) {
         if b & 0x80 != 0 {
             self.cpu.p |= 0x80

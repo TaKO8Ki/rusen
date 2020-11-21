@@ -49,6 +49,9 @@ impl Nes {
     }
 
     pub fn load(&mut self, rom: Vec<u8>) {
+        let mirror_flag = rom[6];
+        self.ppu.mirror = mirror_flag > 0;
+
         let prg_addr = 0x0010;
         let prg_page = rom[4];
 
@@ -58,14 +61,19 @@ impl Nes {
         let prg_bytes = rom
             .get(prg_addr as usize..(prg_addr + prg_page as u16 * PRG_ROM_PAGE_SIZE) as usize)
             .unwrap();
-        let _chr_bytes =
-            rom.get(chr_addr as usize..(chr_addr + chr_page as u16 * CHR_ROM_PAGE_SIZE) as usize);
+        let chr_bytes = rom
+            .get(chr_addr as usize..(chr_addr + chr_page as u16 * CHR_ROM_PAGE_SIZE) as usize)
+            .unwrap();
 
         for (index, byte) in prg_bytes.iter().enumerate() {
             self.ram[0x8000 + index] = *byte;
             if prg_page == 1 {
                 self.ram[(0x8000 + index + 0x4000) as usize] = *byte
             }
+        }
+
+        for (index, byte) in chr_bytes.iter().enumerate() {
+            self.ppu.ram[index] = *byte
         }
     }
 
