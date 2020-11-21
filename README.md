@@ -8,9 +8,9 @@ NES Emulator written in Rust
 
 ## History
 
-## Hello World!
+### Hello World!
 ![hello world](./resources/hello_world.png)
 
-## Pass CPU test
+### Pass CPU test
 
 ![test](./resources/test.png)
