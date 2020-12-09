@@ -1,4 +1,3 @@
-use crate::nes::Nes;
 use crate::render::GridPosition;
 use ggez::graphics::{self, MeshBuilder};
 
@@ -78,6 +77,7 @@ pub struct Ppu {
     pub scroll: [u8; 2],
     pub scroll_flag: bool,
     pub raster: u16,
+    pub cycle: usize,
 }
 
 impl Default for Ppu {
@@ -91,14 +91,15 @@ impl Default for Ppu {
             scroll: [0; 2],
             scroll_flag: false,
             raster: 3,
+            cycle: 0,
         }
     }
 }
 
-impl Nes {
-    pub fn build_background(&mut self, x: u16, y: u16, b_x: u16, b_y: u16, mesh: &mut MeshBuilder) {
-        let sprite_num = self.ppu.ram[0x2000 + b_x as usize + b_y as usize * 0x20];
-        let attr = self.ppu.ram[0x23c0 + b_x as usize / 4 + b_y as usize / 4 * 0x08];
+impl Ppu {
+    pub fn step(&mut self, x: u16, y: u16, b_x: u16, b_y: u16, mesh: &mut MeshBuilder) {
+        let sprite_num = self.ram[0x2000 + b_x as usize + b_y as usize * 0x20];
+        let attr = self.ram[0x23c0 + b_x as usize / 4 + b_y as usize / 4 * 0x08];
         let pallete: u8;
         if (b_x % 4 < 2) && (b_y % 4 < 2) {
             pallete = attr & 0x03
@@ -112,15 +113,15 @@ impl Nes {
 
         let mut sprite_bytes = [0; 16];
         for i in 0..16 {
-            sprite_bytes[i] = self.ppu.ram[sprite_num as usize * 16 + i];
+            sprite_bytes[i] = self.ram[sprite_num as usize * 16 + i];
         }
         let color0 = (sprite_bytes[y as usize] & (0x01 << (7 - x))) >> (7 - x);
         let color1 = ((sprite_bytes[y as usize + 8] & (0x01 << (7 - x))) >> (7 - x)) << 1;
         let p = pallete * 4 + color0 + color1;
         let (r, g, b) = (
-            COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][0],
-            COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][1],
-            COLORS[self.ppu.ram[0x3f00 + p as usize] as usize][2],
+            COLORS[self.ram[0x3f00 + p as usize] as usize][0],
+            COLORS[self.ram[0x3f00 + p as usize] as usize][1],
+            COLORS[self.ram[0x3f00 + p as usize] as usize][2],
         );
         mesh.rectangle(
             graphics::DrawMode::fill(),

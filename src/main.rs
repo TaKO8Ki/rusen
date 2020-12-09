@@ -16,10 +16,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     nes.initialize();
     nes.reset();
 
-    for _ in 0..180 {
-        nes.step();
-    }
-
     nes.run(file_stem)?;
     Ok(())
 }

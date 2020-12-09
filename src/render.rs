@@ -32,12 +32,32 @@ impl event::EventHandler for Nes {
         graphics::clear(ctx, graphics::BLACK);
         self.set_v_blank();
         let mut mesh = MeshBuilder::new();
-        for b_y in 0..HEIGHT / 8 {
-            for b_x in 0..WIDTH / 8 {
-                for y in 0..8 {
-                    for x in 0..8 {
-                        self.build_background(x, y, b_x, b_y, &mut mesh)
+        let mut total_cycle: usize = 0;
+        let mut b_y = 0;
+        let mut y = 0;
+        while total_cycle < 341 * (HEIGHT + 20) as usize {
+            let cpu_cycle = self.step();
+            let ppu_cycle = self.ppu.cycle + cpu_cycle as usize;
+            if ppu_cycle >= 341 / 3 {
+                if y == 7 {
+                    if b_y == HEIGHT / 8 - 1 {
+                        break;
                     }
+                    y = 0;
+                    b_y += 1;
+                } else {
+                    y += 1;
+                };
+                self.ppu.cycle = self.ppu.cycle + cpu_cycle as usize - 341 / 3;
+            } else {
+                self.ppu.cycle += cpu_cycle as usize;
+                continue;
+            };
+            self.ppu.cycle += cpu_cycle as usize;
+            total_cycle += cpu_cycle as usize;
+            for b_x in 0..WIDTH / 8 {
+                for x in 0..8 {
+                    self.ppu.step(x, y, b_x, b_y, &mut mesh)
                 }
             }
         }
